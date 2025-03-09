@@ -1,7 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { Response } from 'express';
+import { Response, Request } from 'express';
+
+interface CustomRequest extends Request {
+  user: { sub: string };
+  cookies: { refresh_token: string };
+}
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -82,10 +87,13 @@ describe('AuthController', () => {
 
   describe('refresh', () => {
     it('should refresh tokens and return new access token', async () => {
-      const req = {
+      const req: CustomRequest = {
         user: { sub: 'user-id' },
         cookies: { refresh_token: 'test-refresh-token' },
-      };
+        get: jest.fn(),
+        header: jest.fn(),
+        accepts: jest.fn(),
+      } as any;
 
       const mockResponse = {
         cookie: jest.fn(),
