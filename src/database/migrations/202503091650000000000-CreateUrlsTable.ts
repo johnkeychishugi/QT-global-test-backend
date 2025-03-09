@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
 
 export class CreateUrlsTable1650000000001 implements MigrationInterface {
-  name = 'CreateUrlsTable1650000000001';
+  name = 'CreateUrlsTable202503091650000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
