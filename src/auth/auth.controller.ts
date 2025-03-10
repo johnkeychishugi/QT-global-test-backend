@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Res, Req } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Res, Req, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -7,11 +7,32 @@ import { Public } from '../common/decorators/public.decorator';
 import { Response } from 'express';
 import { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+import { 
+  ApiTags, 
+  ApiOperation, 
+  ApiResponse, 
+  ApiBody, 
+  ApiBearerAuth,
+  ApiCookieAuth
+} from '@nestjs/swagger';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiBody({ type: RegisterDto })
+  @ApiResponse({ 
+    status: HttpStatus.CREATED, 
+    description: 'User successfully registered',
+    schema: {
+      properties: {
+        accessToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' }
+      }
+    }
+  })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid input' })
   @Public()
   @Post('register')
   async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) response: Response) {
@@ -23,6 +44,18 @@ export class AuthController {
     return { accessToken: tokens.accessToken };
   }
 
+  @ApiOperation({ summary: 'Log in with email/username and password' })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'User successfully logged in',
+    schema: {
+      properties: {
+        accessToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' }
+      }
+    }
+  })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Invalid credentials' })
   @Public()
   @Post('login')
   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response) {
@@ -34,6 +67,10 @@ export class AuthController {
     return { accessToken: tokens.accessToken };
   }
 
+  @ApiOperation({ summary: 'Log out the current user' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'User successfully logged out' })
+  @ApiBearerAuth('access-token')
+  @HttpCode(HttpStatus.OK)
   @Post('logout')
   async logout(@Res({ passthrough: true }) response: Response) {
     // Clear the refresh token cookie
@@ -41,6 +78,18 @@ export class AuthController {
     return { message: 'Logged out successfully' };
   }
 
+  @ApiOperation({ summary: 'Refresh the access token using refresh token' })
+  @ApiCookieAuth('refresh_token')
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Tokens successfully refreshed',
+    schema: {
+      properties: {
+        accessToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' }
+      }
+    }
+  })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Invalid refresh token' })
   @Public()
   @UseGuards(JwtRefreshGuard)
   @Post('refresh')
