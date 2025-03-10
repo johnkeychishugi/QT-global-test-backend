@@ -11,6 +11,7 @@ A modern URL shortening service with built-in analytics, user authentication, an
 - **OAuth Integration**: Sign in with Google and GitHub
 - **API Documentation**: Interactive Swagger documentation
 - **Docker Support**: Easy containerized setup for development and production
+- **CI/CD Pipeline**: Automated testing and deployment with GitHub Actions
 
 ## Technology Stack
 
@@ -19,6 +20,7 @@ A modern URL shortening service with built-in analytics, user authentication, an
 - **Authentication**: JWT (access & refresh tokens)
 - **Documentation**: Swagger/OpenAPI
 - **Containerization**: Docker & Docker Compose
+- **CI/CD**: GitHub Actions
 
 ## Installation
 
@@ -175,10 +177,20 @@ For production deployment with Docker:
 docker-compose up -d
 ```
 
+### CI/CD Pipeline
+
+This project includes a GitHub Actions workflow for continuous integration and deployment. The workflow:
+
+- Automatically builds and tests the application on every push and pull request
+- Deploys to staging when changes are pushed to the development branch
+- Deploys to production when changes are pushed to the main/master branch
+
+For more information, see [GITHUB_WORKFLOW.md](GITHUB_WORKFLOW.md).
+
 ## License
 
 [MIT License](LICENSE)
 
 ## Contributors
 
-- [Your Name](https://github.com/johnkeychishugi)
+- [John Chishugi](https://github.com/johnkeychishugi)
