@@ -34,7 +34,7 @@ A modern URL shortening service with built-in analytics, user authentication, an
 1. Clone the repository:
    ```bash
    git clone <repository-url>
-   cd url-shortener-api
+   cd QT-global-test-backend
    ```
 
 2. Install dependencies:
