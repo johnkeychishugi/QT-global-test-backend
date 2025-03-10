@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { User } from '../users/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { OAuthUserDto } from './dto/oauth-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -35,6 +36,7 @@ export class AuthService {
     const user = this.usersRepository.create({
       email: registerDto.email,
       username: registerDto.username,
+      name: registerDto.name,
       passwordHash,
     });
     
@@ -57,6 +59,11 @@ export class AuthService {
     }
 
     // Verify password
+    if (!loginDto.password) {
+      throw new UnauthorizedException('Password is required');
+    }
+
+    // @ts-ignore - We've already checked that password exists
     const isPasswordValid = await bcrypt.compare(loginDto.password, user.passwordHash);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
@@ -98,5 +105,73 @@ export class AuthService {
     }
     
     return this.generateTokens(user);
+  }
+
+  async validateOAuthUser(oauthUserDto: OAuthUserDto): Promise<User> {
+    // Try to find existing user by provider and providerId
+    let user = await this.usersRepository.findOne({ 
+      where: { 
+        provider: oauthUserDto.provider,
+        providerId: oauthUserDto.providerId
+      } 
+    });
+
+    // If user doesn't exist, try to find by email
+    if (!user) {
+      const existingUser = await this.usersRepository.findOne({ 
+        where: { email: oauthUserDto.email } 
+      });
+
+      if (existingUser) {
+        // If user exists with email but not linked to OAuth, update with OAuth info
+        existingUser.provider = oauthUserDto.provider;
+        existingUser.providerId = oauthUserDto.providerId;
+        existingUser.picture = oauthUserDto.picture;
+        
+        // Save the updated user
+        user = await this.usersRepository.save(existingUser);
+      } else {
+        // Create a new user
+        const username = await this.generateUniqueUsername(oauthUserDto.name);
+        const newUser = this.usersRepository.create({
+          email: oauthUserDto.email,
+          username,
+          name: oauthUserDto.name,
+          picture: oauthUserDto.picture,
+          provider: oauthUserDto.provider,
+          providerId: oauthUserDto.providerId,
+        });
+        
+        user = await this.usersRepository.save(newUser);
+      }
+    }
+
+    return user;
+  }
+
+  private async generateUniqueUsername(name: string): Promise<string> {
+    // Remove spaces and special characters
+    let baseUsername = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    // If the name is too short, add a default
+    if (baseUsername.length < 3) {
+      baseUsername = 'user';
+    }
+    
+    let username = baseUsername;
+    let count = 1;
+    
+    // Check if username exists, if so, add a number and try again
+    while (await this.usersRepository.findOne({ where: { username } })) {
+      username = `${baseUsername}${count}`;
+      count++;
+    }
+    
+    return username;
+  }
+
+  async oauthLogin(user: User): Promise<{ accessToken: string; refreshToken: string; user: User }> {
+    const tokens = this.generateTokens(user);
+    return { ...tokens, user };
   }
 } 

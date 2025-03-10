@@ -86,4 +86,16 @@ export class AnalyticsService {
 
     return this.clicksRepository.save(click);
   }
+
+  async deleteByShortCode(urlId: string): Promise<void> {
+    // Find the URL by ID
+    const url = await this.urlsRepository.findOne({ where: { id: urlId } });
+    
+    if (!url) {
+      throw new NotFoundException('URL not found');
+    }
+    
+    // Delete all clicks associated with this URL ID
+    await this.clicksRepository.delete({ urlId: url.id });
+  }
 } 

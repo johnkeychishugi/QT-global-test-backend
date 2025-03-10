@@ -13,12 +13,21 @@ export class User {
   @Column({ unique: true })
   username!: string;
 
-  @Column()
+  @Column({ nullable: true })
   @Exclude()
-  passwordHash!: string;
+  passwordHash?: string;
 
   @Column({ nullable: true })
   name?: string;
+
+  @Column({ nullable: true })
+  picture?: string;
+
+  @Column({ nullable: true })
+  provider?: string;
+
+  @Column({ nullable: true })
+  providerId?: string;
 
   @CreateDateColumn()
   createdAt!: Date;

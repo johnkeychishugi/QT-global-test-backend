@@ -22,15 +22,24 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  @Get('me')
+  async getMe(@Req() req: Request & { user: { sub: string } }) {
+    const user = await this.usersService.findOne(req.user.sub);
+    // Remove sensitive information
+    const { passwordHash, ...result } = user;
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   getProfile(@Req() req: Request & { user: { sub: string } }) {
     return this.usersService.findOne(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
   }
 
   @UseGuards(JwtAuthGuard)
