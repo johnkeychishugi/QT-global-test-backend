@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  # Development configuration overrides
+  api:
+    build:
+      target: build
+    command: npm run start:dev
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "${PORT:-3000}:3000"
+      - "9229:9229" # For debugging
+
+  # Keep other services the same as in the main docker-compose.yml 

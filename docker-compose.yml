@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # NestJS API service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ${NODE_ENV:-production}
+    container_name: url-shortener-api
+    restart: always
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3000
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-password}
+      - DB_DATABASE=${DB_DATABASE:-url_shortener}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3001}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - GITHUB_CALLBACK_URL=${GITHUB_CALLBACK_URL}
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+    networks:
+      - url-shortener-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: url-shortener-postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-password}
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_DB=${DB_DATABASE:-url_shortener}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - url-shortener-network
+
+volumes:
+  postgres-data:
+
+networks:
+  url-shortener-network:
+    driver: bridge 
