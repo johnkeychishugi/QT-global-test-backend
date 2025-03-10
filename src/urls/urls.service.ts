@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Url } from './url.entity';
 import { CreateUrlDto } from './dto/create-url.dto';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class UrlsService {
@@ -14,24 +15,29 @@ export class UrlsService {
   async create(createUrlDto: CreateUrlDto, userId: string): Promise<Url> {
     try {
       const { longUrl, customCode } = createUrlDto;
-      
+      // Check if URL is valid
+      try {
+        new URL(longUrl);
+      } catch (e) {
+        throw new BadRequestException('Invalid URL format');
+      }
+
       let shortCode: string;
       
       if (customCode) {
-        // Check if custom code already exists
+        // Check if custom short code already exists
         const existingUrl = await this.urlsRepository.findOne({ where: { shortCode: customCode } });
         if (existingUrl) {
           throw new BadRequestException('Custom code already in use');
         }
         shortCode = customCode;
       } else {
-        // Generate random short code using dynamic import for nanoid
-        const { nanoid } = await import('nanoid');
-        shortCode = nanoid(8); // Generate an 8-character code
+        // Generate a random short code
+        shortCode = crypto.randomBytes(6).toString('base64url');
         
         // Ensure uniqueness
         while (await this.urlsRepository.findOne({ where: { shortCode } })) {
-          shortCode = nanoid(8);
+          shortCode = crypto.randomBytes(6).toString('base64url');
         }
       }
 

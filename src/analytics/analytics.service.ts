@@ -34,7 +34,7 @@ export class AnalyticsService {
 
     const browserStats = await this.clicksRepository
       .createQueryBuilder('click')
-      .select('SUBSTRING_INDEX(click.userAgent, "/", 1)', 'browser')
+      .select('CASE WHEN click.userAgent IS NULL THEN \'Unknown\' ELSE split_part(click.userAgent, \'/\', 1) END', 'browser')
       .addSelect('COUNT(*)', 'count')
       .where('click.urlId = :urlId', { urlId: url.id })
       .groupBy('browser')
@@ -42,7 +42,7 @@ export class AnalyticsService {
 
     const referrerStats = await this.clicksRepository
       .createQueryBuilder('click')
-      .select('COALESCE(click.referrer, "Direct")', 'referrer')
+      .select('COALESCE(click.referrer, \'Direct\')', 'referrer')
       .addSelect('COUNT(*)', 'count')
       .where('click.urlId = :urlId', { urlId: url.id })
       .groupBy('referrer')
@@ -65,9 +65,22 @@ export class AnalyticsService {
   }
 
   async recordClick(urlId: string, clickData: { referrer?: string; userAgent?: string }) {
+    // Sanitize referrer URL to avoid SQL issues
+    let sanitizedReferrer = undefined;
+    if (clickData.referrer) {
+      try {
+        // Try to parse and then regenerate the URL to ensure it's valid
+        const referrerUrl = new URL(clickData.referrer);
+        sanitizedReferrer = referrerUrl.toString();
+      } catch (e) {
+        // If it's not a valid URL, store it as a simple string or omit it
+        sanitizedReferrer = clickData.referrer;
+      }
+    }
+
     const click = this.clicksRepository.create({
       urlId,
-      referrer: clickData.referrer,
+      referrer: sanitizedReferrer,
       userAgent: clickData.userAgent,
     });
 

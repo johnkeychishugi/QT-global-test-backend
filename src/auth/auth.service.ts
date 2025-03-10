@@ -45,7 +45,6 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto): Promise<{ accessToken: string; refreshToken: string }> {
-    // Find user by email or username
     const user = await this.usersRepository.findOne({
       where: [
         { email: loginDto.emailOrUsername },
